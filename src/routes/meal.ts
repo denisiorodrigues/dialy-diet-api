@@ -81,12 +81,19 @@ export async function mealsRoutes(app: FastifyInstance) {
       })
 
       const { id } = getMealParamSchema.parse(request.params)
+      const sessionId = request.cookies.session_id
+
+      const mealFinded = await knex('meals').where({ id }).first()
+
+      if (!mealFinded) {
+        return reply.status(404).send({ error: 'Meal not found' })
+      }
 
       const { name, description, isDiet } = updateMealBodySchema.parse(
         request.body,
       )
 
-      await knex('meals').where({ id }).update({
+      await knex('meals').where({ id, session_id: sessionId }).update({
         name,
         description,
         is_diet: isDiet,
