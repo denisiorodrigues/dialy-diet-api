@@ -13,11 +13,6 @@ export async function usersRoutes(app: FastifyInstance) {
 
     const sessionId = randomUUID()
 
-    reply.cookie('sessionId', sessionId, {
-      path: '/',
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-    })
-
     await knex('users').insert({
       id: randomUUID(),
       name,
@@ -41,6 +36,24 @@ export async function usersRoutes(app: FastifyInstance) {
     const { id } = getUserParamSchema.parse(request.params)
 
     const user = await knex('users').where({ id }).first('*')
+
     return { user }
+  })
+
+  app.get('/login/:id', async (request, reply) => {
+    const getUserParamSchema = z.object({
+      id: z.string().uuid(),
+    })
+
+    const { id } = getUserParamSchema.parse(request.params)
+
+    const user = await knex('users').where({ id }).first('*')
+
+    reply.cookie('sessionId', user.session_id, {
+      path: '/',
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    })
+
+    return reply.status(204).send()
   })
 }
