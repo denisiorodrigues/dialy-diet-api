@@ -49,7 +49,7 @@ export async function usersRoutes(app: FastifyInstance) {
 
     const user = await knex('users').where({ id }).first('*')
 
-    reply.cookie('sessionId', user.session_id, {
+    reply.cookie('session_id', user.session_id, {
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     })

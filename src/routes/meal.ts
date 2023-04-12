@@ -2,25 +2,40 @@ import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { knex } from '../database'
 import { randomUUID } from 'crypto'
+import { checkSessionIdExists } from '../middlewares/check-session-id-exists'
 
 export async function mealsRoutes(app: FastifyInstance) {
-  app.get('/', async (request, reply) => {
-    const meals = await knex('meals').select('*')
+  app.get(
+    '/',
+    { preHandler: [checkSessionIdExists] },
+    async (request, reply) => {
+      const sessionId = request.cookies.session_id
 
-    return { meals }
-  })
+      const meals = await knex('meals')
+        .where({ session_id: sessionId })
+        .select('*')
 
-  app.get('/:id', async (request, reply) => {
-    const getMealParamSchema = z.object({
-      id: z.string().uuid(),
-    })
+      return { meals }
+    },
+  )
 
-    const { id } = getMealParamSchema.parse(request.params)
+  app.get(
+    '/:id',
+    { preHandler: [checkSessionIdExists] },
+    async (request, reply) => {
+      const getMealParamSchema = z.object({
+        id: z.string().uuid(),
+      })
 
-    const meal = await knex('meals').where({ id }).first('*')
+      const { id } = getMealParamSchema.parse(request.params)
+      const sessionId = request.cookies.session_id
+      const meal = await knex('meals')
+        .where({ id, session_id: sessionId })
+        .first('*')
 
-    return { meal }
-  })
+      return { meal }
+    },
+  )
 
   // app.get('/:id/metrics', async (request, reply) => {
 
@@ -37,48 +52,59 @@ export async function mealsRoutes(app: FastifyInstance) {
       request.body,
     )
 
+    const sessionId = request.cookies.session_id
+
     await knex('meals').insert({
       id: randomUUID(),
       name,
       description,
       is_diet: isDiet,
       create_at: new Date().toString(),
+      session_id: sessionId,
     })
 
     return reply.status(201).send()
   })
 
-  app.put('/:id', async (request, reply) => {
-    const updateMealBodySchema = z.object({
-      name: z.string(),
-      description: z.string(),
-      isDiet: z.boolean(),
-    })
+  app.put(
+    '/:id',
+    { preHandler: [checkSessionIdExists] },
+    async (request, reply) => {
+      const updateMealBodySchema = z.object({
+        name: z.string(),
+        description: z.string(),
+        isDiet: z.boolean(),
+      })
 
-    const getMealParamSchema = z.object({
-      id: z.string().uuid(),
-    })
+      const getMealParamSchema = z.object({
+        id: z.string().uuid(),
+      })
 
-    const { id } = getMealParamSchema.parse(request.params)
+      const { id } = getMealParamSchema.parse(request.params)
 
-    const { name, description, isDiet } = updateMealBodySchema.parse(
-      request.body,
-    )
+      const { name, description, isDiet } = updateMealBodySchema.parse(
+        request.body,
+      )
 
-    await knex('meals').where({ id }).update({
-      name,
-      description,
-      is_diet: isDiet,
-    })
-  })
+      await knex('meals').where({ id }).update({
+        name,
+        description,
+        is_diet: isDiet,
+      })
+    },
+  )
 
-  app.delete('/:id', async (request, reply) => {
-    const getMealParamSchema = z.object({
-      id: z.string().uuid(),
-    })
+  app.delete(
+    '/:id',
+    { preHandler: [checkSessionIdExists] },
+    async (request, reply) => {
+      const getMealParamSchema = z.object({
+        id: z.string().uuid(),
+      })
 
-    const { id } = getMealParamSchema.parse(request.params)
+      const { id } = getMealParamSchema.parse(request.params)
 
-    await knex('meals').where({ id }).delete()
-  })
+      await knex('meals').where({ id }).delete()
+    },
+  )
 }
