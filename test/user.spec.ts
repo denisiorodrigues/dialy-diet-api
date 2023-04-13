@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe } from 'vitest'
+import { afterAll, beforeAll, describe, it } from 'vitest'
 import { app } from '../src/app'
 import { beforeEach } from 'node:test'
 import { execSync } from 'node:child_process'
@@ -19,8 +19,11 @@ describe('users routes', () => {
   })
 
   it('shold be able to create a new user', async () => {
-    await request(app.server).post('/users').send({
-      name: 'Esteban Tavares',
-    })
+    await request(app.server)
+      .post('/users')
+      .send({
+        name: 'Esteban Tavares',
+      })
+      .expect(201)
   })
 })
