@@ -83,7 +83,6 @@ describe('meals routes', () => {
       .set('Cookie', cookies)
       .expect(200)
 
-    console.log(listMealsResponse.body)
     expect(listMealsResponse.body.meals).toEqual([
       expect.objectContaining({
         name: 'Café da amnhã',
