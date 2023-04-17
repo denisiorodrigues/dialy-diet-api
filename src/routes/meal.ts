@@ -37,21 +37,41 @@ export async function mealsRoutes(app: FastifyInstance) {
     },
   )
 
-  app.get('/metrics', async (request, reply) => {
-    const count = 0 // knex('meals').count('id').first()
-    const inDiet = 0 // knex('meals').count('is_diet').first()
-    const offDiet = 0 // knex('meals').count('is_diet').first()
-    const bestSequenceOfDay = 0 // knex('meals').count(
-    //   knex.raw('??', ['create_at', 'is_diet']),
-    // )
+  app.get(
+    '/metrics',
+    { preHandler: [checkSessionIdExists] },
+    async (request, reply) => {
+      const sessionId = request.cookies.session_id
 
-    return reply.status(200).send({
-      count,
-      inDiet,
-      offDiet,
-      bestSequenceOfDay,
-    })
-  })
+      const { count } = await knex('meals')
+        .where({ session_id: sessionId })
+        .count('id as count')
+        .first()
+
+      const { inDiet } = await knex('meals')
+        .where({ session_id: sessionId, is_diet: true })
+        .count('id as inDiet')
+        .first()
+
+      const { offDiet } = await knex('meals')
+        .where({ session_id: sessionId, is_diet: false })
+        .count('id as offDiet')
+        .first()
+
+      const bestSequenceOfDay = 0
+      // await knex('meals')
+      //   .where({ session_id: sessionId, is_diet: true })
+      //   .max('id')
+      //   .first()
+
+      return reply.status(200).send({
+        count,
+        inDiet,
+        offDiet,
+        bestSequenceOfDay,
+      })
+    },
+  )
 
   app.post('/', async (request, reply) => {
     const createMealBodySchema = z.object({
